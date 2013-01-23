@@ -4,19 +4,13 @@
 void testApp::setup(){
 	width = 640;
 	height = 480;
-	
-	// Print the markers from the "AllBchThinMarkers.png" file in the data folder
-	#ifdef CAMERA_CONNECTED
-	vidGrabber.initGrabber(width, height);
-	#else
-	vidPlayer.loadMovie("marker.mov");
-	vidPlayer.play();
-	vidPlayer.setLoopState(OF_LOOP_NORMAL);
-	#endif
-	
+		
 	colorImage.allocate(width, height);
 	grayImage.allocate(width, height);
 	grayThres.allocate(width, height);
+    depthThres.allocate(width, height);
+    depthNearThreshold = 0;
+    depthFarThreshold = 800;
 	
 	// Load the image we are going to distort
 	displayImage.loadImage("of.jpg");
@@ -26,7 +20,7 @@ void testApp::setup(){
 	displayImageCorners.push_back(ofPoint(0, 0));
 	displayImageCorners.push_back(ofPoint(displayImage.width, 0));
 	displayImageCorners.push_back(ofPoint(displayImage.width, displayImage.height));
-	displayImageCorners.push_back(ofPoint(0, displayImage.height));	
+	displayImageCorners.push_back(ofPoint(0, displayImage.height));
 	
 	// This uses the default camera calibration and marker file
 	artk.setup(width, height);
@@ -43,60 +37,70 @@ void testApp::setup(){
 	// Set the threshold
 	// ARTK+ does the thresholding for us
 	// We also do it in OpenCV so we can see what it looks like for debugging
-	threshold = 85;
-	artk.setThreshold(threshold);
+	artkThreshold = 85;
+	artk.setThreshold(artkThreshold);
 
+    openNIDevice.setup();
+    openNIDevice.addDepthGenerator();
+    openNIDevice.addImageGenerator();
+    openNIDevice.setRegister(true);
+    openNIDevice.setMirror(false);
+    ofxOpenNIDepthThreshold openNIDepthThreshold = ofxOpenNIDepthThreshold(depthNearThreshold, depthFarThreshold);
+    openNIDepthThreshold.setMaskPixelFormat(OF_PIXELS_MONO);
+    openNIDevice.addDepthThreshold(openNIDepthThreshold);
+    openNIDevice.start();
+    
+    verdana.loadFont(ofToDataPath("verdana.ttf"), 24);
+    
 	ofBackground(127,127,127);
 	
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
-	#ifdef CAMERA_CONNECTED
-	vidGrabber.grabFrame();
-	bool bNewFrame = vidGrabber.isFrameNew();
-	#else
-	vidPlayer.update();
-	bool bNewFrame = vidPlayer.isFrameNew();
-	#endif
-	
-	if(bNewFrame) {
-		
-		#ifdef CAMERA_CONNECTED
-		colorImage.setFromPixels(vidGrabber.getPixels(), width, height);
-		#else
-		colorImage.setFromPixels(vidPlayer.getPixels(), width, height);
-		#endif
-		
-		// convert our camera image to grayscale
-		grayImage = colorImage;
-		// apply a threshold so we can see what is going on
-		grayThres = grayImage;
-		grayThres.threshold(threshold);
-		
-		// Pass in the new image pixels to artk
-		artk.update(grayImage.getPixels());
-		
-	}
-	
+    openNIDevice.update();
+    if(openNIDevice.isNewFrame()){
+        ofBackground(0, 0, 0);
+        colorImage.setFromPixels(openNIDevice.getImagePixels());
+        grayImage = colorImage;
+        grayThres = grayImage;
+        grayThres.threshold(artkThreshold);
+        artk.update(grayImage.getPixels());
+        
+        depthThres.setFromPixels(openNIDevice.getDepthThreshold(0).getMaskPixels());
+    }
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
-	
+	ofPushMatrix();
+    ofScale(0.5, 0.5, 1);
 	// Main image
 	ofSetHexColor(0xffffff);
 	grayImage.draw(0, 0);
-	ofSetHexColor(0x666666);	
-	ofDrawBitmapString(ofToString(artk.getNumDetectedMarkers()) + " marker(s) found", 10, 20);
+	ofSetHexColor(0x666666);
+	ofDrawBitmapString(ofToString(artk.getNumDetectedMarkers()) + " marker(s) found", 1290, 20);
 
 	// Threshold image
 	ofSetHexColor(0xffffff);
 	grayThres.draw(640, 0);
-	ofSetHexColor(0x666666);	
-	ofDrawBitmapString("Threshold: " + ofToString(threshold), 650, 20);
-	ofDrawBitmapString("Use the Up/Down keys to adjust the threshold", 650, 40);
+	ofSetHexColor(0x666666);
+	ofDrawBitmapString("artkThreshold: " + ofToString(artkThreshold), 1290, 40);
+	ofDrawBitmapString("Use the Up/Down keys to adjust the gray scale threshold", 1290, 60);
 
+    depthThres.draw(0, 480);
+    ofDrawBitmapString("Near Threashold: " + ofToString(depthNearThreshold), 1290, 100);
+    ofDrawBitmapString("Far Threashold: " + ofToString(depthFarThreshold), 1290, 120);
+    ofDrawBitmapString("Use the Left/Rgith keys to adjust the depth threshold", 1290, 140);
+    
+    ofDisableBlendMode();
+    
+    // draw some info regarding frame counts etc
+	ofSetColor(0, 255, 0);
+	//string msg = " MILLIS: " + ofToString(ofGetElapsedTimeMillis()) + " FPS: " + ofToString(ofGetFrameRate()) + " Device FPS: " + ofToString(openNIDevice.getFrameRate());
+    
+	//verdana.drawString(msg, 20, openNIDevice.getNumDevices() * 480 - 20);
+    
 	// ARTK draw
 	// An easy was to see what is going on
 	// Draws the marker location and id number
@@ -106,7 +110,7 @@ void testApp::draw(){
 	// See if marker ID '0' was detected
 	// and draw blue corners on that marker only
 	int myIndex = artk.getMarkerIndex(0);
-	if(myIndex >= 0) {	
+	if(myIndex >= 0) {
 		// Get the corners
 		vector<ofPoint> corners;
 		artk.getDetectedMarkerBorderCorners(myIndex, corners);
@@ -161,22 +165,38 @@ void testApp::draw(){
 			ofTranslate(0, 0, i*1);
 		}
 	}
-	
+	ofPopMatrix();
+}
+
+
+//--------------------------------------------------------------
+/*void testApp::userEvent(ofxOpenNIUserEvent & event){
+    ofLogNotice() << getUserStatusAsString(event.userStatus) << "for user" << event.id << "from device" << event.deviceID;
+}*/
+
+//--------------------------------------------------------------
+void testApp::exit(){
+    openNIDevice.stop();
 }
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
-	if(key == OF_KEY_UP) {
-		artk.setThreshold(++threshold);
-		
-	} else if(key == OF_KEY_DOWN) {
-		artk.setThreshold(--threshold);		
-	}
-	#ifdef CAMERA_CONNECTED
-	if(key == 's') {
-		vidGrabber.videoSettings();
-	}
-	#endif
+    switch(key){
+        case OF_KEY_UP:
+            artk.setThreshold(++artkThreshold);
+            break;
+        case OF_KEY_DOWN:
+            artk.setThreshold(--artkThreshold);
+            break;
+        case OF_KEY_RIGHT:
+            depthFarThreshold+=10;
+            openNIDevice.getDepthThreshold(0).setFarThreshold(depthFarThreshold);
+            break;
+        case OF_KEY_LEFT:
+            depthFarThreshold-=10;
+            openNIDevice.getDepthThreshold(0).setFarThreshold(depthFarThreshold);
+            break;
+    }
 }
 
 //--------------------------------------------------------------

@@ -3,11 +3,12 @@
 
 #include "ofxOpenCv.h"
 #include "ofxARToolkitPlus.h"
+#include "ofxOpenNI.h"
 
 #include "ofMain.h"
 
 // Uncomment this to use a camera instead of a video file
-#define CAMERA_CONNECTED
+#define KINECT_CONNECTED
 
 class testApp : public ofBaseApp{
 
@@ -15,6 +16,7 @@ class testApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+        void exit();
 
 		void keyPressed  (int key);
 		void keyReleased(int key);
@@ -28,26 +30,34 @@ class testApp : public ofBaseApp{
 		int width, height;
 	
 		/* Use either camera or a video file */
-		#ifdef CAMERA_CONNECTED
-		ofVideoGrabber vidGrabber;
-		#else
-		ofVideoPlayer vidPlayer;
-		#endif
+		//#ifdef KINECT_CONNECTED
+		//ofVideoGrabber vidGrabber;
+		//#else
+		//ofVideoPlayer vidPlayer;
+		//#endif
 
 		/* ARToolKitPlus class */	
 		ofxARToolkitPlus artk;	
-		int threshold;
+		int artkThreshold;
 	
 		/* OpenCV images */
 		ofxCvColorImage colorImage;
 		ofxCvGrayscaleImage grayImage;
 		ofxCvGrayscaleImage	grayThres;
+        ofxCvGrayscaleImage depthThres;
+        int depthNearThreshold;
+        int depthFarThreshold;
+    
+        ofxCvContourFinder 	contourFinder;
 	
 		/* Image to distort on to the marker */
 		ofImage displayImage;
 		/* The four corners of the image */
 		vector<ofPoint> displayImageCorners;
-	
+    
+        //void userEvent(ofxOpenNIUserEvent & event);
+        ofxOpenNI openNIDevice;
+        ofTrueTypeFont verdana;
 };
 
 #endif
