@@ -49,6 +49,8 @@
 		F6A6ACFC16A7C98E0075EBB0 /* libXnVNite_1_5_2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6A6ACEE16A7C98D0075EBB0 /* libXnVNite_1_5_2.dylib */; };
 		F6A6AD0316A7C9A50075EBB0 /* ofxOpenNI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F6A6ACFE16A7C9A50075EBB0 /* ofxOpenNI.cpp */; };
 		F6A6AD0416A7C9A50075EBB0 /* ofxOpenNITypes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F6A6AD0016A7C9A50075EBB0 /* ofxOpenNITypes.cpp */; };
+		F6C75EBB16B02A420077789D /* ofxBlobTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F6C75EB516B02A420077789D /* ofxBlobTracker.cpp */; };
+		F6C75EBC16B02A420077789D /* ofxContourFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F6C75EB716B02A420077789D /* ofxContourFinder.cpp */; };
 		d3301f6a0b43bb293ed97c1d5d26c840 /* ofxCvShortImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8a4dd23693dfab8ec05faa5d62c49d8c /* ofxCvShortImage.cpp */; };
 		e212c821d1064b92dd953a42edc08aa7 /* ofxCvHaarFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9a16cbf2e8cfe43af54fe6f55efbf8a4 /* ofxCvHaarFinder.cpp */; };
 		fb09c6b2a1da0ea217240cb8b2bf4b85 /* ofxCvGrayscaleImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 057122a817d12571f8c0c7a4d522b879 /* ofxCvGrayscaleImage.cpp */; };
@@ -324,6 +326,12 @@
 		F6A6AD8C16A7C9B70075EBB0 /* XnUSBDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XnUSBDevice.h; sourceTree = "<group>"; };
 		F6A6AD8D16A7C9B70075EBB0 /* XnUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XnUtils.h; sourceTree = "<group>"; };
 		F6A6AD8E16A7C9B70075EBB0 /* XnVersion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XnVersion.h; sourceTree = "<group>"; };
+		F6C75EB216B02A420077789D /* license.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = license.md; sourceTree = "<group>"; };
+		F6C75EB416B02A420077789D /* ofxBlob.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxBlob.h; sourceTree = "<group>"; };
+		F6C75EB516B02A420077789D /* ofxBlobTracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxBlobTracker.cpp; sourceTree = "<group>"; };
+		F6C75EB616B02A420077789D /* ofxBlobTracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxBlobTracker.h; sourceTree = "<group>"; };
+		F6C75EB716B02A420077789D /* ofxContourFinder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxContourFinder.cpp; sourceTree = "<group>"; };
+		F6C75EB816B02A420077789D /* ofxContourFinder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxContourFinder.h; sourceTree = "<group>"; };
 		a0399084868e7cafb7e3d8e975d55095 /* retina.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = retina.hpp; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/contrib/retina.hpp; sourceTree = SOURCE_ROOT; };
 		a15e0125b8c9b7f01ded56958ff73de8 /* matrix.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = matrix.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/matrix.h; sourceTree = SOURCE_ROOT; };
 		a182b99cf30d0a0b251ca3d0edf91c33 /* TrackerMultiMarker.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = TrackerMultiMarker.h; path = ../../../addons/ofxARToolkitPlus/libs/ARToolKitPlus/include/ARToolKitPlus/TrackerMultiMarker.h; sourceTree = SOURCE_ROOT; };
@@ -626,6 +634,7 @@
 		BB4B014C10F69532006C3DED /* addons */ = {
 			isa = PBXGroup;
 			children = (
+				F6C75EA716B02A420077789D /* ofxBlobTracker */,
 				F6A6ACDE16A7C9790075EBB0 /* ofxOpenNI */,
 				a0b90d3b0adb9c1716816714bf7f212b /* ofxOpenCv */,
 				0bb5ee3beff6250ef4f880c62496f972 /* ofxARToolkitPlus */,
@@ -982,6 +991,28 @@
 			path = Win32;
 			sourceTree = "<group>";
 		};
+		F6C75EA716B02A420077789D /* ofxBlobTracker */ = {
+			isa = PBXGroup;
+			children = (
+				F6C75EB216B02A420077789D /* license.md */,
+				F6C75EB316B02A420077789D /* src */,
+			);
+			name = ofxBlobTracker;
+			path = ../../../addons/ofxBlobTracker;
+			sourceTree = "<group>";
+		};
+		F6C75EB316B02A420077789D /* src */ = {
+			isa = PBXGroup;
+			children = (
+				F6C75EB416B02A420077789D /* ofxBlob.h */,
+				F6C75EB516B02A420077789D /* ofxBlobTracker.cpp */,
+				F6C75EB616B02A420077789D /* ofxBlobTracker.h */,
+				F6C75EB716B02A420077789D /* ofxContourFinder.cpp */,
+				F6C75EB816B02A420077789D /* ofxContourFinder.h */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
 		a0b90d3b0adb9c1716816714bf7f212b /* ofxOpenCv */ = {
 			isa = PBXGroup;
 			children = (
@@ -1211,6 +1242,8 @@
 				61ac151356166de56d4d77a63023c5e4 /* ofxARToolkitPlus.cpp in Sources */,
 				F6A6AD0316A7C9A50075EBB0 /* ofxOpenNI.cpp in Sources */,
 				F6A6AD0416A7C9A50075EBB0 /* ofxOpenNITypes.cpp in Sources */,
+				F6C75EBB16B02A420077789D /* ofxBlobTracker.cpp in Sources */,
+				F6C75EBC16B02A420077789D /* ofxContourFinder.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

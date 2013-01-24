@@ -4,11 +4,12 @@
 #include "ofxOpenCv.h"
 #include "ofxARToolkitPlus.h"
 #include "ofxOpenNI.h"
+#include "ofxBlobTracker.h"
 
 #include "ofMain.h"
 
 // Uncomment this to use a camera instead of a video file
-#define KINECT_CONNECTED
+//#define KINECT_CONNECTED
 
 class testApp : public ofBaseApp{
 
@@ -25,6 +26,12 @@ class testApp : public ofBaseApp{
 		void mousePressed(int x, int y, int button);
 		void mouseReleased(int x, int y, int button);
 		void windowResized(int w, int h);
+        void dragEvent(ofDragInfo dragInfo);
+        void gotMessage(ofMessage msg);
+
+        void blobAdded(ofxBlob &_blob);
+        void blobMoved(ofxBlob &_blob);
+        void blobDeleted(ofxBlob &_blob);
 	
 		/* Size of the image */
 		int width, height;
@@ -48,7 +55,8 @@ class testApp : public ofBaseApp{
         int depthNearThreshold;
         int depthFarThreshold;
     
-        ofxCvContourFinder 	contourFinder;
+        ofxBlobTracker blobTracker;
+        int minArea;
 	
 		/* Image to distort on to the marker */
 		ofImage displayImage;

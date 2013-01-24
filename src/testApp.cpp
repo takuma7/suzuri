@@ -10,7 +10,7 @@ void testApp::setup(){
 	grayThres.allocate(width, height);
     depthThres.allocate(width, height);
     depthNearThreshold = 0;
-    depthFarThreshold = 800;
+    depthFarThreshold = 680;
 	
 	// Load the image we are going to distort
 	displayImage.loadImage("of.jpg");
@@ -37,10 +37,14 @@ void testApp::setup(){
 	// Set the threshold
 	// ARTK+ does the thresholding for us
 	// We also do it in OpenCV so we can see what it looks like for debugging
-	artkThreshold = 85;
+	artkThreshold = 240;
 	artk.setThreshold(artkThreshold);
-
+    
+    #ifdef KINECT_CONNECTED
     openNIDevice.setup();
+    #else
+    openNIDevice.setupFromONI("test.oni");
+    #endif
     openNIDevice.addDepthGenerator();
     openNIDevice.addImageGenerator();
     openNIDevice.setRegister(true);
@@ -50,10 +54,11 @@ void testApp::setup(){
     openNIDevice.addDepthThreshold(openNIDepthThreshold);
     openNIDevice.start();
     
-    verdana.loadFont(ofToDataPath("verdana.ttf"), 24);
-    
-	ofBackground(127,127,127);
-	
+    // Blob tracking
+    ofAddListener(blobTracker.blobAdded, this, &testApp::blobAdded);
+    ofAddListener(blobTracker.blobMoved, this, &testApp::blobMoved);
+    ofAddListener(blobTracker.blobDeleted, this, &testApp::blobDeleted);
+    minArea = 450;
 }
 
 //--------------------------------------------------------------
@@ -68,31 +73,61 @@ void testApp::update(){
         artk.update(grayImage.getPixels());
         
         depthThres.setFromPixels(openNIDevice.getDepthThreshold(0).getMaskPixels());
+        blobTracker.update(depthThres, 80, minArea);
     }
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
 	ofPushMatrix();
-    ofScale(0.5, 0.5, 1);
+    if(openNIDevice.isRecording()){
+        ofSetHexColor(0xff0000);
+        ofDrawBitmapString("Rec", 650, 20);
+    }else if(openNIDevice.isPlaying()){
+        ofSetHexColor(0x00ff00);
+        ofDrawBitmapString("Playing", 650, 20);
+    }
 	// Main image
 	ofSetHexColor(0xffffff);
-	grayImage.draw(0, 0);
+	grayImage.draw(0, 0, width/2, height/2);
 	ofSetHexColor(0x666666);
-	ofDrawBitmapString(ofToString(artk.getNumDetectedMarkers()) + " marker(s) found", 1290, 20);
+	ofDrawBitmapString(ofToString(artk.getNumDetectedMarkers()) + " marker(s) found", 650, 60);
 
 	// Threshold image
 	ofSetHexColor(0xffffff);
-	grayThres.draw(640, 0);
+	grayThres.draw(width/2, 0, width/2, height/2);
 	ofSetHexColor(0x666666);
-	ofDrawBitmapString("artkThreshold: " + ofToString(artkThreshold), 1290, 40);
-	ofDrawBitmapString("Use the Up/Down keys to adjust the gray scale threshold", 1290, 60);
+	ofDrawBitmapString("artkThreshold: " + ofToString(artkThreshold), 650, 80);
+	ofDrawBitmapString("Use the Up/Down keys to adjust the gray scale threshold", 650, 100);
 
-    depthThres.draw(0, 480);
-    ofDrawBitmapString("Near Threashold: " + ofToString(depthNearThreshold), 1290, 100);
-    ofDrawBitmapString("Far Threashold: " + ofToString(depthFarThreshold), 1290, 120);
-    ofDrawBitmapString("Use the Left/Rgith keys to adjust the depth threshold", 1290, 140);
+    // Depth threshold image
+    ofSetHexColor(0x333333);
+    depthThres.draw(0, height/2, width, height);
+    ofSetHexColor(0x666666);
+    ofDrawBitmapString("Near Threashold: " + ofToString(depthNearThreshold), 650, 140);
+    ofDrawBitmapString("Far Threashold:  " + ofToString(depthFarThreshold), 650, 160);
+    ofDrawBitmapString("Use the Left/Rgith keys to adjust the depth threshold", 650, 180);
     
+    // Blob tracking image
+    ofSetHexColor(0xffffff);
+    blobTracker.draw(0, height/2, width, height);
+    ofSetHexColor(0x666666);
+    ofDrawBitmapString(ofToString((int)blobTracker.size()) + " blob(s) tracked", 650, 220);
+    ofDrawBitmapString("minArea: " + ofToString(minArea), 650, 240);
+    ofDrawBitmapString("User the j/k keys to adjust minArea size", 650, 260);
+    /*ofPushMatrix();
+    for (int i = 0; i < blobTracker.size(); i++){
+        ofFill();
+        ofSetColor(255,0,0);
+        ofCircle(blobTracker[i].centroid.x * width,
+                 height/2 + blobTracker[i].centroid.y * height,
+                 10);
+        ofSetColor(0);
+        ofDrawBitmapString(ofToString( blobTracker[i].id ),
+                           blobTracker[i].centroid.x * width,
+                           height/2 + blobTracker[i].centroid.y * height);
+    }
+    ofPopMatrix();*/
     ofDisableBlendMode();
     
     // draw some info regarding frame counts etc
@@ -104,8 +139,9 @@ void testApp::draw(){
 	// ARTK draw
 	// An easy was to see what is going on
 	// Draws the marker location and id number
-	artk.draw(640, 0);
-	
+	artk.draw(0, height/2, width, height);
+    artk.draw(width/2, 0, width/2, height/2);
+	/*
 	// ARTK 2D stuff
 	// See if marker ID '0' was detected
 	// and draw blue corners on that marker only
@@ -164,15 +200,23 @@ void testApp::draw(){
 			ofRect(-25, -25, 50, 50);
 			ofTranslate(0, 0, i*1);
 		}
-	}
+	}*/
 	ofPopMatrix();
 }
 
 
 //--------------------------------------------------------------
-/*void testApp::userEvent(ofxOpenNIUserEvent & event){
-    ofLogNotice() << getUserStatusAsString(event.userStatus) << "for user" << event.id << "from device" << event.deviceID;
-}*/
+void testApp::blobAdded(ofxBlob &_blob){
+    ofLog(OF_LOG_NOTICE, "Blob ID " + ofToString(_blob.id) + " added" );
+}
+
+void testApp::blobMoved(ofxBlob &_blob){
+    ofLog(OF_LOG_NOTICE, "Blob ID " + ofToString(_blob.id) + " moved" );
+}
+
+void testApp::blobDeleted(ofxBlob &_blob){
+    ofLog(OF_LOG_NOTICE, "Blob ID " + ofToString(_blob.id) + " deleted" );
+}
 
 //--------------------------------------------------------------
 void testApp::exit(){
@@ -182,6 +226,31 @@ void testApp::exit(){
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
     switch(key){
+        case ' ':
+            #ifdef KINECT_CONNECTED
+            #else
+            openNIDevice.setPaused(!openNIDevice.isPaused());
+            #endif
+        case 'r':
+            #ifdef KINECT_CONNECTED
+            if(!openNIDevice.isRecording()){
+                openNIDevice.startRecording(ofToDataPath("test.oni"));
+            }else{
+                openNIDevice.stopRecording();
+            }
+            #endif
+            break;
+        case 'p':
+            #ifdef KINECT_CONNECTED
+            if(!openNIDevice.isRecording() && !openNIDevice.isPlaying()){
+                openNIDevice.startPlayer("test.oni");
+            }else if(openNIDevice.isPlaying()){
+                openNIDevice.firstFrame();
+            }
+            #else
+            openNIDevice.firstFrame();
+            #endif
+            break;
         case OF_KEY_UP:
             artk.setThreshold(++artkThreshold);
             break;
@@ -189,12 +258,18 @@ void testApp::keyPressed(int key){
             artk.setThreshold(--artkThreshold);
             break;
         case OF_KEY_RIGHT:
-            depthFarThreshold+=10;
+            depthFarThreshold+=5;
             openNIDevice.getDepthThreshold(0).setFarThreshold(depthFarThreshold);
             break;
         case OF_KEY_LEFT:
-            depthFarThreshold-=10;
+            depthFarThreshold-=5;
             openNIDevice.getDepthThreshold(0).setFarThreshold(depthFarThreshold);
+            break;
+        case 'j':
+            minArea-=10;
+            break;
+        case 'k':
+            minArea+=10;
             break;
     }
 }
@@ -227,5 +302,15 @@ void testApp::mouseReleased(int x, int y, int button){
 //--------------------------------------------------------------
 void testApp::windowResized(int w, int h){
 
+}
+
+//--------------------------------------------------------------
+void testApp::gotMessage(ofMessage msg){
+    
+}
+
+//--------------------------------------------------------------
+void testApp::dragEvent(ofDragInfo dragInfo){
+    
 }
 
