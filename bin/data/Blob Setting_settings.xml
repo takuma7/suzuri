@@ -1,0 +1,18 @@
+<controls>
+    <SliderInt_min_blob_size>
+        <name>min blob size</name>
+        <value>466</value>
+    </SliderInt_min_blob_size>
+    <SliderInt_max_blob_size>
+        <name>max blob size</name>
+        <value>61445</value>
+    </SliderInt_max_blob_size>
+    <SliderInt_hand_tracking_dist_thres>
+        <name>hand tracking dist thres</name>
+        <value>37</value>
+    </SliderInt_hand_tracking_dist_thres>
+    <Toggle_show_the_thres>
+        <name>show the thres</name>
+        <value>1</value>
+    </Toggle_show_the_thres>
+</controls>

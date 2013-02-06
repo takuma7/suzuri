@@ -1,0 +1,14 @@
+<controls>
+    <Toggle_show_guide>
+        <name>show guide</name>
+        <value>0</value>
+    </Toggle_show_guide>
+    <SliderFloat_table_width>
+        <name>table width</name>
+        <value>0.454545468</value>
+    </SliderFloat_table_width>
+    <SliderFloat_table_height>
+        <name>table height</name>
+        <value>0.344962418</value>
+    </SliderFloat_table_height>
+</controls>

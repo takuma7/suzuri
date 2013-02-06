@@ -1,0 +1,10 @@
+<controls>
+    <SliderInt_near_depth_threshold>
+        <name>near depth threshold</name>
+        <value>400</value>
+    </SliderInt_near_depth_threshold>
+    <SliderInt_far_depth_threshold>
+        <name>far depth threshold</name>
+        <value>789</value>
+    </SliderInt_far_depth_threshold>
+</controls>
