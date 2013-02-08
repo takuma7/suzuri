@@ -1,7 +1,7 @@
 <controls>
     <SliderInt_min_blob_size>
         <name>min blob size</name>
-        <value>466</value>
+        <value>882</value>
     </SliderInt_min_blob_size>
     <SliderInt_max_blob_size>
         <name>max blob size</name>

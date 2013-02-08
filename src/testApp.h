@@ -43,6 +43,7 @@ public:
         ofPushStyle();
         ofSetColor(mColor);
         ofNoFill();
+        ofSetLineWidth(brushSize);
         for(int i=_t; i<mLine.size()-_t; i+=_t){
             ofLine(mLine[i-_t].x * _w, mLine[i-_t].y * _h, mLine[i].x * _w, mLine[i].y * _h);
         }
@@ -53,7 +54,7 @@ public:
     std::vector<ofVec2f> mLine;
     ofColor mColor;
     float mTimeOfDeath;
-    int uid;
+    string uid;
     int brushSize;
     
     void setColor(string hexColorCode){
@@ -76,10 +77,10 @@ public:
 class User{
 public:
     User(){}
-    User(int _uid){
+    User(string _uid){
         uid = _uid;
     }
-    int uid;
+    string uid;
     string username;
     string first_name;
     string last_name;
@@ -105,9 +106,11 @@ public:
         
         //load image
         imageLoader.loadFromURL(&img, img_url);
+        cout << "loading image from " << img_url << endl;
     }
     
     void setBrushSize(int _size){
+        cout << first_name << " " << last_name << "'s brush size changed from " << size << " to " << _size << endl;
         size = _size;
     }
     
@@ -120,6 +123,7 @@ public:
     }
     
     void setColor(ofColor _color){
+        cout << first_name << " " << last_name << "'s color changed" << endl;
         color = _color;
     }
 };
@@ -192,6 +196,7 @@ public:
     
     /* touch */
     bool showTouchPoints;
+    bool showBeginnigPoints;
     float touchDistThres;
 
     /* osc */
@@ -204,9 +209,9 @@ public:
     /* image loader */
     ofxThreadedImageLoader imageLoader;
 
-    std::map<int, int> trackedHands;    //map<blobID, uid>
+    std::map<int, string> trackedHands;    //map<blobID, uid>
     std::set<int> trackedMarkers;       //set<markerID>
-    std::map<int, User> users;
+    std::map<string, User> users;
     std::map<int, TouchPoint> touchPoints;
 };
 

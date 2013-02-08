@@ -3,8 +3,12 @@
         <name>show lines</name>
         <value>1</value>
     </Toggle_show_lines>
+    <Toggle_show_beginning_pts>
+        <name>show beginning pts</name>
+        <value>1</value>
+    </Toggle_show_beginning_pts>
     <SliderFloat_touch_dist_thres>
         <name>touch dist thres</name>
-        <value>0.083072104</value>
+        <value>24.294672012</value>
     </SliderFloat_touch_dist_thres>
 </controls>

@@ -5,6 +5,6 @@
     </SliderInt_near_depth_threshold>
     <SliderInt_far_depth_threshold>
         <name>far depth threshold</name>
-        <value>789</value>
+        <value>689</value>
     </SliderInt_far_depth_threshold>
 </controls>

@@ -1,10 +1,10 @@
 <controls>
     <Toggle_toggle_fullscreen>
         <name>toggle fullscreen</name>
-        <value>0</value>
+        <value>1</value>
     </Toggle_toggle_fullscreen>
     <SliderInt_gray_threshold>
         <name>gray threshold</name>
-        <value>244</value>
+        <value>236</value>
     </SliderInt_gray_threshold>
 </controls>
