@@ -100,6 +100,10 @@ void testApp::setup(){
     gui.addToggle("show guide", showTableCalibrationGuide);
     gui.addSlider("table width", tableWidth, 0, 1);
     gui.addSlider("table height", tableHeight, 0, 1);
+    //touch settings
+    gui.addPage("Touch Settings");
+    gui.addToggle("show lines", showTouchPoints);
+    gui.addSlider("touch dist thres", touchDistThres, 0, 0.5);
     gui.loadFromXML();
     gui.show();
     
@@ -172,12 +176,15 @@ void testApp::update(){
         if(m.getAddress()=="/client/tap"){
             int markerID = m.getArgAsInt32(0);
             int uid = m.getArgAsInt32(1);
+            
             std::set<int>::iterator it = trackedMarkers.find(markerID);
             if(it!=trackedMarkers.end()){ //if the marker found on the table...
                 int markerIndex = artk.getMarkerIndex(markerID);
                 ofPoint markerCenter = artk.getDetectedMarkerCenter(markerIndex);
+                
                 int trackedBlobsNum = blobTracker.size();
                 bool handFound = false;
+                
                 cout << "finding the closest finger to " << markerID << "\n";
                 for(int i=0; i<trackedBlobsNum && !handFound; i++){
                     cout << "blob#" << blobTracker.trackedBlobs[i].id << "\n";
@@ -200,7 +207,11 @@ void testApp::update(){
                                     trackedHands.insert(std::pair<int, int>( blobTracker.trackedBlobs[i].id, uid));
                                     if(users.find(uid) == users.end()){
                                         cout << "\t\t" << "user not found. adding...(uid:" << uid << ")\n";
-                                        users.insert(uid);
+                                        users.insert(pair<int, User>(uid, User(uid)));
+                                        ofxOscMessage req_for_user_info;
+                                        req_for_user_info.setAddress("/user/info");
+                                        req_for_user_info.addIntArg(uid);
+                                        oscSenderForServer.sendMessage(req_for_user_info);
                                         cout << "\t\t" << "user#" << uid << " added\n";
                                     }
                                     ofxOscMessage sm;
@@ -228,6 +239,115 @@ void testApp::update(){
             string imgURL = m.getArgAsString(2);
             ofImage img;
             imageLoader.loadFromURL(&img, imgURL);
+        }else if(m.getAddress() == "/user/info"){
+            int uid = m.getArgAsInt32(0);
+            if(uid != -1){
+                std::map<int, User>::iterator uit = users.find(uid);
+                if(uit != users.end()){
+                    uit->second.setup(
+                          m.getArgAsString(1) //username
+                      ,   m.getArgAsString(2) //first_name
+                      ,   m.getArgAsString(3) //last_name
+                      ,   m.getArgAsString(4) //img_url
+                      ,   imageLoader
+                      ,   m.getArgAsString(5) //url
+                      ,   m.getArgAsInt32(6)  //brush size
+                      ,   m.getArgAsString(7) //color
+                    );
+                }
+            }
+        }else if(m.getAddress() == "/suzuri/size/changed"){
+            int uid = m.getArgAsInt32(0);
+            std::map<int, User>::iterator uit = users.find(uid);
+            if(uit != users.end()){
+                uit->second.setBrushSize(m.getArgAsInt32(1));
+            }
+        }else if(m.getAddress() == "/suzuri/color/changed"){
+            int uid = m.getArgAsInt32(0);
+            std::map<int, User>::iterator uit = users.find(uid);
+            if(uit != users.end()){
+                uit->second.setColor(m.getArgAsString(1));
+            }
+        }
+    }
+    
+    while(oscRecieverForTable.hasWaitingMessages()){
+        ofxOscMessage m;
+        oscRecieverForTable.getNextMessage( &m );
+        
+        //dumpOSC(m);
+        if(m.getAddress() == "/table/touch/began"){
+            ofColor newColor;
+            newColor.r = rand()*255;
+            newColor.g = rand()*255;
+            newColor.b = rand()*255;
+            float touchX = m.getArgAsFloat(1);
+            float touchY = m.getArgAsFloat(2);
+            touchPoints.insert(std::make_pair(m.getArgAsInt32(0), TouchPoint(ofVec2f(touchX, touchY), newColor)));
+            //search a hand which most likely drew the line
+            int winner = -1;
+            float minDist = 99999999;
+            for(int i=0; i<blobTracker.size(); i++){
+                for(int j=0; j<blobTracker.trackedBlobs[i].pts.size(); j++){
+                    if(j%5==0){
+                        ofPoint pt = blobTracker.trackedBlobs[i].pts[j];
+                        if(
+                           pt.x < tableOriginPosition.x ||
+                           pt.x > tableOriginPosition.x + tableWidth ||
+                           pt.y < tableOriginPosition.y ||
+                           pt.y > tableOriginPosition.y + tableHeight
+                           ){
+                            continue;
+                        }
+                        pt.x -= tableOriginPosition.x;
+                        pt.x *= tableWidth;
+                        pt.y -= tableOriginPosition.y;
+                        pt.y *= tableHeight;
+                        float scale = 1000;
+                        float distSquared = (pt.x - touchX) * (pt.x - touchX) * tableWidth * tableWidth + (pt.y - touchY) * (pt.y - touchY) * tableHeight * tableHeight;
+                        cout << "distSquared: " << distSquared << endl;
+                        cout << "touchDistThres^2: " << touchDistThres*touchDistThres << endl;
+                        if(distSquared < touchDistThres * touchDistThres && distSquared < minDist){
+                            minDist = distSquared;
+                            winner = blobTracker.trackedBlobs[i].id;
+                        }
+                    }
+                }
+            }
+            cout << "winner: " << winner << endl;
+            ofxOscMessage sm;
+            sm.setAddress("/table/touch/auth");
+            sm.addIntArg(m.getArgAsInt32(0));
+            bool auth_f = false;
+            if(winner != -1){
+                std::map<int, int>::iterator it = trackedHands.find(winner);
+                if(it!=trackedHands.end()){
+                    int uid = it->second;
+                    std::map<int, User>::iterator uit = users.find(uid);
+                    if(uit != users.end()){
+                        int size;
+                        ofColor color;
+                        size = uit->second.size;
+                        color = uit->second.color;
+                        sm.addIntArg(uid);
+                        sm.addIntArg(size);
+                        sm.addIntArg(color.r);
+                        sm.addIntArg(color.g);
+                        sm.addIntArg(color.b);
+                        auth_f = true;
+                    }
+                }
+            }
+            if(auth_f == false){
+                sm.addIntArg(-1);
+                oscSenderForTable.sendMessage(sm);
+            }else{
+                oscSenderForTable.sendMessage(sm);
+            }
+        }else if(m.getAddress() == "/table/touch/moved"){
+            touchPoints[m.getArgAsInt32(0)].addPoint(ofVec2f(m.getArgAsFloat(1), m.getArgAsFloat(2)));
+        }else if(m.getAddress() == "/table/touch/end"){
+            touchPoints.erase(m.getArgAsInt32(0));
         }
     }
 }
@@ -319,11 +439,22 @@ void testApp::draw(){
         ofNoFill();
         for(int i=0; i<artk.getNumDetectedMarkers(); i++){
             ofCircle(artk.getDetectedMarkerCenter(i), handTrackingDistThres);
-            ofDrawBitmapString(ofToString(artk.getMarkerID(i)), artk.getDetectedMarkerCenter(i).x, artk.getDetectedMarkerCenter(i).y+handTrackingDistThres+20);
+            ofDrawBitmapString(ofToString(artk.getMarkerID(i)), artk.getDetectedMarkerCenter(i).x, artk.getDetectedMarkerCenter(i).y+handTrackingDistThres+10);
         }
     }
     glPopMatrix();
-
+    
+    if(showTouchPoints){
+        for(std::map<int, TouchPoint>::iterator tpIt = touchPoints.begin(); tpIt != touchPoints.end(); tpIt++){
+            tpIt->second.draw(
+                              tableOriginPosition.x * fullWidth,
+                              tableOriginPosition.y * fullHeight,
+                              tableWidth * fullWidth,
+                              tableHeight * fullHeight
+                              );
+        }
+    }
+    
     ofSetHexColor(0xffffff);
     blobTracker.draw(0, 0, fullWidth, fullHeight, trackedHands);
     /*ofPushMatrix();
@@ -420,8 +551,19 @@ void testApp::draw(){
     status.push_back(ofToString((int)blobTracker.size()) + " blob(s) tracked");
     status.push_back(ofToString((int)users.size()) + " user(s) now on the system");
     status.push_back(ofToString((int)trackedHands.size()) + " hand(s) tracked");
+    status.push_back(ofToString((int)touchPoints.size()) + " touch point(s)");
     for(int i=0; i<status.size(); i++){
         ofDrawBitmapString(status[i], fullWidth + 10, 100 + i*40);
+    }
+    
+    ofDrawBitmapString("users: ", fullWidth + 10, 300);
+    int i=0;
+    for(std::map<int, User>::iterator uit = users.begin(); uit != users.end(); uit++){
+        ofNoFill();
+        ofRect(fullWidth+10, 300+(i+1)*25 , 20, 20);
+        uit->second.img.draw(fullWidth + 10, 300 + (i+1)*25, 20, 20);
+        ofDrawBitmapString(uit->second.first_name + " " + uit->second.last_name, fullWidth + 40, 300 + (i+1)*25 + 15);
+        i++;
     }
     gui.draw();
 }

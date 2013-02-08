@@ -9,7 +9,7 @@
     </SliderInt_max_blob_size>
     <SliderInt_hand_tracking_dist_thres>
         <name>hand tracking dist thres</name>
-        <value>37</value>
+        <value>31</value>
     </SliderInt_hand_tracking_dist_thres>
     <Toggle_show_the_thres>
         <name>show the thres</name>

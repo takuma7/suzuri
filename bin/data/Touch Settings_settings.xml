@@ -1,0 +1,10 @@
+<controls>
+    <Toggle_show_lines>
+        <name>show lines</name>
+        <value>1</value>
+    </Toggle_show_lines>
+    <SliderFloat_touch_dist_thres>
+        <name>touch dist thres</name>
+        <value>0.083072104</value>
+    </SliderFloat_touch_dist_thres>
+</controls>
